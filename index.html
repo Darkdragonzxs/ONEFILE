@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Proxy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sansation:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --text-primary: #000000;
+            --border-color: #000000;
+            --input-bg: #ffffff;
+            --input-border: #000000;
+            --button-bg: #ffffff;
+            --button-hover-bg: #f0f0f0;
+            --modal-bg: #ffffff;
+            --suggestion-bg: #ffffff;
+            --placeholder-color: #666666;
+        }
+
+        body {
+            font-family: 'Sansation', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .simple-border {
+            border: 2px solid var(--border-color);
+            background-color: var(--bg-primary);
+        }
+
+        .url-input {
+            background: var(--input-bg);
+            border: 2px solid var(--input-border);
+            color: var(--text-primary);
+            padding: 0 10px;
+            font-size: 18px;
+            outline: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .url-input::placeholder {
+            color: var(--placeholder-color);
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: var(--text-primary);
+        }
+
+        iframe {
+            flex-grow: 1;
+            width: 100%;
+            border: 2px solid var(--border-color);
+        }
+
+        .proxy-icon-fa {
+            font-size: 28px;
+            color: var(--text-primary);
+        }
+
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .homepage-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-primary);
+            padding: 20px;
+            width: 100%;
+        }
+
+        .homepage-logo-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .homepage-logo-icon {
+            font-size: 110px;
+            color: var(--text-primary);
+            margin-right: 15px;
+        }
+
+        .homepage-logo-text {
+            font-size: 85px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .homepage-search-wrapper {
+            display: flex;
+            align-items: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .homepage-search-bar {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            background-color: var(--input-bg);
+            border: 2px solid var(--input-border);
+            border-radius: 25px;
+            padding: 8px 20px;
+        }
+
+        .homepage-search-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 0 10px;
+            font-size: 18px;
+            outline: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .homepage-search-input::placeholder {
+            color: var(--placeholder-color);
+        }
+
+        .homepage-search-icon {
+            color: var(--placeholder-color);
+            margin-right: 10px;
+        }
+
+        .suggestion-icons-container {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 5px;
+            margin-top: 40px;
+            width: 100%;
+            max-width: 300px;
+            justify-items: center;
+        }
+
+        @media (min-width: 640px) {
+            .suggestion-icons-container {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                max-width: 500px;
+                gap: 10px;
+            }
+        }
+
+        .suggestion-icon-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            width: 100%;
+            max-width: 150px;
+        }
+
+        .suggestion-icon-wrapper:hover {
+            opacity: 0.7;
+        }
+
+        .suggestion-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            background-color: var(--suggestion-bg);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .suggestion-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .suggestion-text {
+            margin-top: 8px;
+            font-size: 14px;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--modal-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .modal-header h2 {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .modal-close-button {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .modal-close-button:hover {
+            opacity: 0.7;
+        }
+
+        .setting-section {
+            margin-bottom: 15px;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .setting-section-title {
+            display: flex;
+            align-items: center;
+            font-size: 17px;
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .setting-section-title i {
+            margin-right: 8px;
+            font-size: 18px;
+            color: var(--text-primary);
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-item label {
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ffffff;
+            border: 2px solid #000000;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #000000;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #000000;
+        }
+
+        input:checked + .slider:before {
+            background-color: #ffffff;
+            transform: translateX(18px);
+        }
+
+        .modal-footer {
+            text-align: right;
+            margin-top: 15px;
+            border-top: 2px solid var(--border-color);
+            padding-top: 15px;
+        }
+
+        .modal-save-button {
+            background: var(--button-bg);
+            color: var(--text-primary);
+            padding: 8px 18px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-save-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            color: black;
+            font-size: 24px;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .loading-spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #000000;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .nav-button-hover {
+            padding: 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid transparent;
+        }
+
+        .nav-button-hover:hover {
+            border-color: var(--border-color);
+            background-color: var(--button-hover-bg);
+        }
+
+        .nav-button-hover svg { /* Changed from i to svg */
+            color: var(--text-primary);
+            width: 24px; /* Set explicit width */
+            height: 24px; /* Set explicit height */
+        }
+    </style>
+</head>
+<body class="bg-white text-black">
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span>Loading...</span>
+    </div>
+
+    <nav class="simple-border py-1 px-4 flex items-center justify-between shadow-lg rounded-b-lg mx-2 mt-2">
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-globe proxy-icon-fa"></i>
+                <span class="text-xl font-bold text-black">Web Proxy</span>
+            </div>
+            <button id="backButton" class="nav-button-hover transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            </button>
+            <button id="forwardButton" class="nav-button-hover transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+            <button id="refreshButton" class="nav-button-hover transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+            </button>
+        </div>
+        <div class="flex-grow mx-4 relative">
+            <input type="text" id="urlInput" placeholder="Search or Enter a URL" class="url-input w-full p-2 pl-10 rounded-full text-black placeholder-gray-600 text-sm md:text-base">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"></i>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+            <button id="homeButton" class="nav-button-hover transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </button>
+            <button id="devToolsButton" class="nav-button-hover transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-code"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div id="mainContentArea" class="flex-grow w-full rounded-lg my-2 mx-2 flex flex-col items-center justify-center">
+        <div id="homepage" class="homepage-container">
+            <div class="homepage-logo-container">
+                <i class="fas fa-globe homepage-logo-icon"></i>
+                <span class="homepage-logo-text">Web Proxy</span>
+            </div>
+            <!-- Removed homepage search wrapper and suggestion icons container -->
+        </div>
+        <iframe id="browserFrame" src="about:blank" class="flex-grow w-full rounded-lg hidden"></iframe>
+    </div>
+
+    <div id="settingsModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Proxy Settings</h2>
+                <button id="closeModal" class="modal-close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-section">
+                    <div class="setting-section-title">
+                        <i class="fas fa-palette"></i>
+                        <span>Appearance</span>
+                    </div>
+                    <div class="setting-item">
+                        <label for="darkModeToggle">Dark Mode</label>
+                        <label class="switch">
+                            <input type="checkbox" id="darkModeToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label for="enableAnimationsToggle">Enable Animations</label>
+                        <label class="switch">
+                            <input type="checkbox" id="enableAnimationsToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="setting-section">
+                    <div class="setting-section-title">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Privacy & Security</span>
+                    </div>
+                    <div class="setting-item">
+                        <label for="blockTrackersToggle">Block Trackers</label>
+                        <label class="switch">
+                            <input type="checkbox" id="blockTrackersToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label for="enableHttpsOnlyToggle">HTTPS-Only Mode</label>
+                        <label class="switch">
+                            <input type="checkbox" id="enableHttpsOnlyToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveSettings" class="modal-save-button">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const backButton = document.getElementById('backButton');
+        const forwardButton = document.getElementById('forwardButton');
+        const refreshButton = document.getElementById('refreshButton');
+        const homeButton = document.getElementById('homeButton');
+        const devToolsButton = document.getElementById('devToolsButton');
+        const browserFrame = document.getElementById('browserFrame');
+        const homepage = document.getElementById('homepage');
+        const homepageSearchInput = document.getElementById('homepageSearchInput');
+        const mainContentArea = document.getElementById('mainContentArea');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeModalButton = document.getElementById('closeModal');
+        const saveSettingsButton = document.getElementById('saveSettings');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const suggestionIconsContainer = document.querySelector('.suggestion-icons-container'); // This will now be null
+
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const enableAnimationsToggle = document.getElementById('enableAnimationsToggle');
+
+        function decodeBase64(encodedString) {
+            try {
+                return atob(encodedString);
+            } catch (e) {
+                console.error("Base64 decoding failed:", e);
+                return null;
+            }
+        }
+
+        async function proxyLoad(url, frame, loadingOverlay) {
+            if (loadingOverlay) loadingOverlay.classList.add('active');
+
+            let actualTargetUrl = url;
+            const verdantProxyPrefix = window.location.origin + '/route/';
+
+            if (url.startsWith(verdantProxyPrefix)) {
+                const encodedPart = url.substring(verdantProxyPrefix.length);
+                const decodedUrl = decodeBase64(encodedPart);
+                if (decodedUrl) {
+                    actualTargetUrl = decodedUrl;
+                    console.log(`Detected Verdant proxy URL. Decoded to: ${actualTargetUrl}`);
+                } else {
+                    console.warn(`Could not decode Verdant proxy URL. Falling back to original input: ${url}`);
+                    actualTargetUrl = url;
+                }
+            } else {
+                actualTargetUrl = actualTargetUrl.replace(/^(https?:\/\/)?/, '');
+            }
+
+            const urlToFetch = actualTargetUrl.includes('.') ? `https://${actualTargetUrl}` : `https://html.duckduckgo.com/html?q=${encodeURIComponent(actualTargetUrl)}`;
+
+            const proxyChain = [
+                "https://corsproxy.io/?",
+                "https://api.allorigins.win/raw?url=",
+                "https://proxy.cors.sh/",
+                "https://yacdn.com/proxy/",
+                "https://api.codetabs.com/v1/proxy/?quest=",
+                "https://cors.eu.org/",
+                "https://cors.io/?",
+                "https://api.proxied.host/",
+                "https://crossorigin.me/",
+                "https://web.archive.org/web/",
+                "https://thingproxy.freeboard.io/fetch/",
+                "https://toothpaste.bekekes390.workers.dev/?url=",
+            ];
+
+            let response = null;
+            let lastError = "Unknown error, no proxy successfully fetched the content.";
+
+            for (let i = 0; i < proxyChain.length; i++) {
+                const currentProxyBase = proxyChain[i];
+                let currentProxyUrl = currentProxyBase + encodeURIComponent(urlToFetch);
+
+                console.log(`Attempting to fetch with proxy ${i + 1}: ${currentProxyUrl}`);
+
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+                    response = await fetch(currentProxyUrl, {
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (response.ok) {
+                        console.log(`Successfully fetched using proxy ${i + 1}.`);
+                        break;
+                    } else {
+                        lastError = `Proxy ${i + 1} failed with status ${response.status} ${response.statusText}.`;
+                        console.warn(lastError);
+                    }
+                } catch (e) {
+                    if (e.name === 'AbortError') {
+                        lastError = `Proxy ${i + 1} request timed out.`;
+                    } else {
+                        lastError = `Proxy ${i + 1} threw an error: ${e.message}.`;
+                    }
+                    console.error(lastError);
+                }
+            }
+
+            if (!response || !response.ok) {
+                throw new Error(`Failed to load content. All proxy attempts failed. Last detailed error: ${lastError}`);
+            }
+
+            try {
+                const html = await response.text();
+                const baseUrl = new URL(urlToFetch).origin;
+                const processed = html
+                    .replace(/<head>/i, `<head><base href="${baseUrl}/">`)
+                    .replace(/<body([^>]*)>/i, `<body$1 style="margin:0;">`);
+
+                const blob = new Blob([processed], { type: 'text/html' });
+                const blobUrl = URL.createObjectURL(blob);
+
+                console.log('Blob URL ready:', blobUrl);
+                frame.src = blobUrl;
+
+                frame.onload = () => {
+                    console.log('Frame loaded!');
+                    if (loadingOverlay) loadingOverlay.classList.remove('active');
+
+                    try {
+                        const iframeDoc = frame.contentDocument;
+                        if (iframeDoc && iframeDoc.body) {
+                            iframeDoc.body.addEventListener('click', (e) => {
+                                let targetElement = e.target;
+                                let urlToRedirect = '';
+                                let isHandled = false;
+
+                                while (targetElement && targetElement !== iframeDoc.body) {
+                                    if (targetElement.tagName === 'A' && targetElement.href) {
+                                        urlToRedirect = targetElement.href;
+                                        isHandled = true;
+                                        break;
+                                    }
+
+                                    if (targetElement.onclick || targetElement.hasAttribute('data-href') || targetElement.hasAttribute('data-url')) {
+                                        urlToRedirect = targetElement.getAttribute('data-href') || targetElement.getAttribute('data-url') || '';
+
+                                        if (!urlToRedirect && targetElement.onclick) {
+                                            const onclickString = targetElement.onclick.toString();
+                                            const match = /(?:location\.href|window\.location|location\.assign|window\.open)\s*=\s*['"]([^'"]+)['"]/.exec(onclickString);
+                                            if (match && match[1]) {
+                                                urlToRedirect = match[1];
+                                            }
+                                        }
+
+                                        if (urlToRedirect) {
+                                            isHandled = true;
+                                            break;
+                                        }
+                                    }
+
+                                    targetElement = targetElement.parentElement;
+                                }
+
+                                if (isHandled && urlToRedirect) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+
+                                    try {
+                                        const absoluteUrl = new URL(urlToRedirect, new URL(frame.srcdoc ? frame.src : frame.src).origin).href;
+                                        console.log(`Intercepted navigation to: ${absoluteUrl}`);
+                                        proxyLoad(absoluteUrl, frame, loadingOverlay);
+                                    } catch (urlError) {
+                                        console.warn("Invalid URL for interception, attempting fallback:", urlToRedirect, urlError);
+                                        proxyLoad(urlToRedirect, frame, loadingOverlay);
+                                    }
+                                }
+                            }, true);
+                        }
+                    } catch (e) {
+                        console.warn('Frame access error (expected for cross-origin iframes when intercepting links):', e);
+                        console.warn('Internal navigation on some sites might not work automatically due to security restrictions.');
+                    }
+                };
+
+            } catch (error) {
+                console.error('Browser Error (during HTML processing/blob creation):', error);
+                frame.srcdoc = `
+                    <div style="color:white;text-align:center;font-size:20px;font-family:sans-serif;padding:50px;background-color:#333;">
+                        Error: Failed to load content.<br><br>
+                        This might be due to a proxy issue, or the target website being inaccessible. Please try a different URL or try again later.
+                        <br><br>
+                        Tip: For complex sites, internal links might not work automatically. Try copying the full URL and pasting it into the bar above.
+                    </div>
+                `;
+                if (loadingOverlay) loadingOverlay.classList.remove('active');
+            }
+        }
+
+        function showHomepage() {
+            homepage.classList.remove('hidden');
+            browserFrame.classList.add('hidden');
+            urlInput.value = "";
+        }
+
+        function showBrowserFrame() {
+            homepage.classList.add('hidden');
+            browserFrame.classList.remove('hidden');
+        }
+
+        function navigateToUrl(url) {
+            if (!url.trim()) {
+                showHomepage();
+                return;
+            }
+            proxyLoad(url, browserFrame, loadingOverlay);
+            urlInput.value = url;
+            showBrowserFrame();
+        }
+
+        function applyTheme(isDarkMode) {
+            if (isDarkMode) {
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.add('light-mode');
+            }
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+
+        urlInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                navigateToUrl(urlInput.value);
+            }
+        });
+
+        homepageSearchInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                const query = homepageSearchInput.value;
+                if (query.trim()) {
+                    navigateToUrl(query);
+                }
+            }
+        });
+
+        backButton.addEventListener('click', function() {
+            if (browserFrame.classList.contains('hidden') || browserFrame.contentWindow.history.length <= 1) {
+                showHomepage();
+            } else {
+                browserFrame.contentWindow.history.back();
+            }
+        });
+
+        forwardButton.addEventListener('click', function() {
+            if (!browserFrame.classList.contains('hidden')) {
+                browserFrame.contentWindow.history.forward();
+            }
+        });
+
+        refreshButton.addEventListener('click', function() {
+            if (!browserFrame.classList.contains('hidden')) {
+                browserFrame.contentWindow.location.reload();
+            } else {
+                showHomepage();
+            }
+        });
+
+        homeButton.addEventListener('click', function() {
+            showHomepage();
+        });
+
+        devToolsButton.addEventListener('click', function() {
+            settingsModal.classList.remove('hidden');
+        });
+
+        closeModalButton.addEventListener('click', function() {
+            settingsModal.classList.add('hidden');
+        });
+
+        saveSettingsButton.addEventListener('click', function() {
+            alert("Settings saved! (This is a placeholder action)");
+            settingsModal.classList.add('hidden');
+        });
+
+
+        darkModeToggle.addEventListener('change', function() {
+            applyTheme(this.checked);
+        });
+
+        enableAnimationsToggle.addEventListener('change', function() {
+            if (this.checked) {
+                console.log("Animations Enabled (placeholder)");
+            } else {
+                console.log("Animations Disabled (placeholder)");
+            }
+        });
+
+        window.onload = function() {
+            showHomepage();
+        };
+    </script>
+</body>
+</html>
